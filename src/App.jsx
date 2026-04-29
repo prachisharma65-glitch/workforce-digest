@@ -298,7 +298,7 @@ function DetailModal({ insight, onClose, onOpenSignalBook, onOpenValidation }) {
                 </div>
                 <div className="sans" style={{ fontSize: 12, color: "#666", lineHeight: 1.55 }}>
                   {actionTaken === "action"
-                    ? "In production, this would schedule the recommended 1:1, draft the Slack message, and notify any relevant buddy or manager."
+                    ? "In production, this would carry out the suggested action — scheduling, messaging, and notifications — automatically."
                     : "In production, this would suppress this alert until next Monday's brief."}
                 </div>
                 <div className="sans mono" style={{ fontSize: 10, color: "#999", letterSpacing: "0.04em", marginTop: 8 }}>
