@@ -175,6 +175,7 @@ function InsightRow({ insight, rank, isLast, resolved, onOpen, onResolve }) {
 }
 
 function DetailModal({ insight, onClose, onOpenSignalBook, onOpenValidation }) {
+  const [actionTaken, setActionTaken] = useState(null);
   return (
     <div
       className="modal-backdrop"
@@ -288,14 +289,33 @@ function DetailModal({ insight, onClose, onOpenSignalBook, onOpenValidation }) {
           <p className="sans" style={{ fontSize: 13, color: "#777", lineHeight: 1.6, margin: "0 0 28px" }}>
             {insight.actionRationale}
           </p>
-          <div style={{ display: "flex", gap: 12 }}>
-            <button className="sans" style={{ flex: 1, padding: "12px 20px", background: "#1a1a1a", color: "#FAF8F4", border: "none", borderRadius: 2, fontSize: 13, fontWeight: 500, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-              Take action <ArrowRight size={14} />
-            </button>
-            <button className="sans" style={{ padding: "12px 20px", background: "transparent", border: "1px solid rgba(0,0,0,0.12)", borderRadius: 2, fontSize: 13, fontWeight: 500, color: "#666" }}>
-              Snooze
-            </button>
-          </div>
+         {actionTaken ? (
+            <div style={{ padding: "16px 18px", background: "rgba(123, 160, 91, 0.08)", border: "1px solid rgba(123, 160, 91, 0.3)", borderRadius: 4, display: "flex", gap: 12, alignItems: "flex-start" }}>
+              <Check size={16} color="#7BA05B" strokeWidth={2.5} style={{ marginTop: 2, flexShrink: 0 }} />
+              <div>
+                <div className="sans" style={{ fontSize: 13, fontWeight: 600, color: "#1a1a1a", marginBottom: 4 }}>
+                  {actionTaken === "action" ? "Action logged" : "Snoozed for 7 days"}
+                </div>
+                <div className="sans" style={{ fontSize: 12, color: "#666", lineHeight: 1.55 }}>
+                  {actionTaken === "action"
+                    ? "In production, this would schedule the recommended 1:1, draft the Slack message, and notify any relevant buddy or manager."
+                    : "In production, this would suppress this alert until next Monday's brief."}
+                </div>
+                <div className="sans mono" style={{ fontSize: 10, color: "#999", letterSpacing: "0.04em", marginTop: 8 }}>
+                  DEMO · NOT CONNECTED TO REAL SYSTEMS
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: "flex", gap: 12 }}>
+              <button onClick={() => setActionTaken("action")} className="sans" style={{ flex: 1, padding: "12px 20px", background: "#1a1a1a", color: "#FAF8F4", border: "none", borderRadius: 2, fontSize: 13, fontWeight: 500, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                Take action <ArrowRight size={14} />
+              </button>
+              <button onClick={() => setActionTaken("snooze")} className="sans" style={{ padding: "12px 20px", background: "transparent", border: "1px solid rgba(0,0,0,0.12)", borderRadius: 2, fontSize: 13, fontWeight: 500, color: "#666" }}>
+                Snooze
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
