@@ -825,7 +825,7 @@ const CURRENT_WEEK = [
     corroboration: [
       { signal: "Concentrated vs distributed pattern", finding: "Drop is concentrated in 2 of 4 designers; the other 2 are at normal activity. Not a team-wide shift.", agrees: true },
       { signal: "Meeting acceptance pattern", finding: "Both quiet designers declined the last 3 team meetings. Their prior attendance was 90%.", agrees: true },
-      { signal: "Slack outage check", finding: "Slack had a 4-hour partial outage Wednesday. Some message counts may be undercounted, but the drop spans 9 days — outage doesn't fully explain it.", agrees: false },
+      { signal: "Recent team retro feedback", finding: "Quarterly retro two weeks ago showed high satisfaction scores from this team. Doesn't fit a disengagement narrative — though retros can lag real sentiment by 2–4 weeks.", agrees: false },
       { signal: "External-departure signals", finding: "No recruiter outreach detected for either. LinkedIn profile changes inconclusive.", agrees: null },
     ],
     provenance: {
