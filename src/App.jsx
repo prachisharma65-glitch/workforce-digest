@@ -95,12 +95,17 @@ export default function WorkforceDigest() {
             <button onClick={() => setView("validation")} className="sans link-btn" style={{ fontSize: 11, color: "#777" }}>
               How we know we're right →
             </button>
+            <button onClick={() => setView("integration")} className="sans link-btn" style={{ fontSize: 11, color: "#777" }}>
+                Integration architecture
+              </button>
           </div>
         </div>
       ) : view === "signalbook" ? (
         <SignalBook onBack={() => setView("digest")} />
       ) : view === "evals" ? (
         <EvalsPage onBack={() => setView("digest")} />
+      ) : view === "integration" ? (
+        <IntegrationPage onBack={() => setView("digest")} />
       ) : (
         <ValidationPage onBack={() => setView("digest")} />
       )}
@@ -738,6 +743,119 @@ function NoiseControls() {
     </div>
   );
 }
+
+function IntegrationPage({ onBack }) {
+  return (
+    <div style={{ maxWidth: 760, margin: "0 auto", padding: "80px 32px 120px" }}>
+      <button onClick={onBack} className="link-btn sans" style={{ fontSize: 12, color: "#777", display: "flex", alignItems: "center", gap: 6, marginBottom: 48 }}>
+        <ArrowLeft size={12} /> Back to brief
+      </button>
+
+      <div style={{ marginBottom: 56 }}>
+        <div className="sans" style={{ fontSize: 12, color: "#9A4D2A", marginBottom: 16, letterSpacing: "0.02em" }}>
+          Integration architecture
+        </div>
+        <h1 className="serif" style={{ fontSize: 40, fontWeight: 400, letterSpacing: "-0.02em", lineHeight: 1.15, margin: "0 0 20px" }}>
+          How this connects to <span style={{ fontStyle: "italic" }}>real systems.</span>
+        </h1>
+        <p className="sans" style={{ fontSize: 15, color: "#666", lineHeight: 1.7, maxWidth: 580, margin: 0 }}>
+          The prototype runs on mock data. This page describes how the production integration layer would be designed — which APIs we'd use, what we'd read, how the sync would work, and where the hard problems are. It's an architectural sketch, not a built integration.
+        </p>
+      </div>
+
+      <Section kicker="01" title="The three categories of source systems" body="The Workforce Digest reads from three categories of systems. Every integration is read-only. The system never writes back to source systems — that constraint is deliberate.">
+        <div>
+          {INTEGRATION_CATEGORIES.map((cat, i) => (
+            <div key={i} style={{ display: "grid", gridTemplateColumns: "180px 1fr", gap: 32, padding: "20px 0", borderTop: "1px solid rgba(0,0,0,0.06)", alignItems: "baseline" }}>
+              <div>
+                <div className="sans" style={{ fontSize: 13, fontWeight: 600, color: "#1a1a1a", marginBottom: 4 }}>{cat.name}</div>
+                <div className="sans mono" style={{ fontSize: 10, color: "#999" }}>{cat.requirement}</div>
+              </div>
+              <div className="sans" style={{ fontSize: 13, color: "#444", lineHeight: 1.65 }}>{cat.purpose}</div>
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      <Section kicker="02" title="Per-system integration design" body="What we'd actually do for each of the five core integrations.">
+        {INTEGRATIONS.map((sys, i) => (
+          <div key={i} style={{ padding: "28px 0", borderTop: "1px solid rgba(0,0,0,0.06)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14, gap: 16 }}>
+              <div className="serif" style={{ fontSize: 19, fontWeight: 500, color: "#1a1a1a", letterSpacing: "-0.005em" }}>{sys.name}</div>
+              <div className="sans mono" style={{ fontSize: 10, color: "#9A4D2A", letterSpacing: "0.04em", whiteSpace: "nowrap" }}>{sys.category}</div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "120px 1fr", gap: 14, fontSize: 12 }}>
+              <div className="sans" style={{ color: "#888", letterSpacing: "0.04em", textTransform: "uppercase", fontSize: 10, paddingTop: 2 }}>Auth</div>
+              <div className="sans" style={{ color: "#444", lineHeight: 1.6 }}>{sys.auth}</div>
+              <div className="sans" style={{ color: "#888", letterSpacing: "0.04em", textTransform: "uppercase", fontSize: 10, paddingTop: 2 }}>Sync</div>
+              <div className="sans" style={{ color: "#444", lineHeight: 1.6 }}>{sys.sync}</div>
+              <div className="sans" style={{ color: "#888", letterSpacing: "0.04em", textTransform: "uppercase", fontSize: 10, paddingTop: 2 }}>Reads</div>
+              <div className="sans" style={{ color: "#444", lineHeight: 1.6 }}>{sys.reads}</div>
+              <div className="sans" style={{ color: "#888", letterSpacing: "0.04em", textTransform: "uppercase", fontSize: 10, paddingTop: 2 }}>Rate limits</div>
+              <div className="sans" style={{ color: "#444", lineHeight: 1.6 }}>{sys.limits}</div>
+              <div className="sans" style={{ color: "#888", letterSpacing: "0.04em", textTransform: "uppercase", fontSize: 10, paddingTop: 2 }}>Watch out for</div>
+              <div className="sans" style={{ color: "#9A4D2A", lineHeight: 1.6 }}>{sys.gotcha}</div>
+            </div>
+          </div>
+        ))}
+      </Section>
+
+      <Section kicker="03" title="The sync architecture" body="Three patterns running in parallel. All three write into a unified internal data model that's source-system-agnostic.">
+        <div>
+          {SYNC_PATTERNS.map((p, i) => (
+            <div key={i} style={{ padding: "22px 0", borderTop: "1px solid rgba(0,0,0,0.06)" }}>
+              <div className="serif" style={{ fontSize: 17, fontWeight: 500, color: "#1a1a1a", marginBottom: 8, letterSpacing: "-0.005em" }}>{p.name}</div>
+              <div className="sans mono" style={{ fontSize: 10, color: "#9A4D2A", letterSpacing: "0.04em", marginBottom: 10 }}>{p.frequency}</div>
+              <div className="sans" style={{ fontSize: 13, color: "#555", lineHeight: 1.65 }}>{p.what}</div>
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      <Section kicker="04" title="Authentication and trust boundaries" body="Every integration uses customer-scoped credentials. The authorization model is built around four invariants:">
+        <div>
+          {AUTH_PRINCIPLES.map((a, i) => (
+            <div key={i} style={{ display: "grid", gridTemplateColumns: "32px 1fr", gap: 20, padding: "20px 0", borderTop: "1px solid rgba(0,0,0,0.06)", alignItems: "baseline" }}>
+              <div className="serif" style={{ fontSize: 14, color: "#bbb", fontStyle: "italic" }}>{String(i + 1).padStart(2, "0")}</div>
+              <div>
+                <div className="sans" style={{ fontSize: 14, fontWeight: 600, color: "#1a1a1a", marginBottom: 6 }}>{a.title}</div>
+                <div className="sans" style={{ fontSize: 13, color: "#666", lineHeight: 1.65 }}>{a.body}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      <Section kicker="05" title="Failure modes — the honest list" body="What can go wrong in production, and how we handle each. This list is the difference between a demo and a real system.">
+        <div>
+          {FAILURE_MODES.map((f, i) => (
+            <div key={i} style={{ padding: "20px 0", borderTop: "1px solid rgba(0,0,0,0.06)" }}>
+              <div className="serif" style={{ fontSize: 16, fontWeight: 500, color: "#1a1a1a", marginBottom: 6, letterSpacing: "-0.005em" }}>{f.failure}</div>
+              <div className="sans" style={{ fontSize: 13, color: "#666", lineHeight: 1.65 }}>{f.handling}</div>
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      <Section kicker="06" title="What we deliberately don't build" body="Architectural integrity is partly about what you choose not to build. Four explicit non-goals.">
+        <div>
+          {NON_GOALS.map((n, i) => (
+            <div key={i} style={{ padding: "22px 0", borderTop: "1px solid rgba(0,0,0,0.06)" }}>
+              <div className="serif" style={{ fontSize: 17, fontWeight: 500, color: "#1a1a1a", marginBottom: 8, letterSpacing: "-0.005em" }}>{n.title}</div>
+              <div className="sans" style={{ fontSize: 13, color: "#666", lineHeight: 1.65 }}>{n.reason}</div>
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      <div style={{ marginTop: 80, paddingTop: 32, borderTop: "1px solid rgba(0,0,0,0.08)" }}>
+        <button onClick={onBack} className="link-btn sans" style={{ fontSize: 12, color: "#777" }}>
+          ← Back to this week's brief
+        </button>
+      </div>
+    </div>
+  );
+}
 // ============= MOCK DATA =============
 
 const CURRENT_WEEK = [
@@ -955,4 +1073,86 @@ const EVAL_RESULTS = [
   { id: "ENGAGE-01", name: "Real disengagement — Design team scenario", description: "Team score 51 (baseline 78), one designer silent for 9 days, no PTO logged.", detector: "engagement_drop", passed: true, expected: "engagement_drop (medium)", actual: "fired: engagement_drop (medium)", rationale: "All three gates: drop 34.6% (≥25%), silent 9 days (≥7), no PTO. Severity medium because drop < 40%.", tests: ["triple-gate logic"] },
   { id: "ENGAGE-02", name: "Team-wide drop with no individual silence (suppress)", description: "Team score down 30%, but every individual still active — likely a sprint week.", detector: "engagement_drop", passed: true, expected: "no alert", actual: "no alert", rationale: "Triple-gate kills this: no individual silence ≥ 7 days. Likely deep-work mode.", tests: ["multi-signal confirmation", "false-positive prevention"] },
   { id: "ENGAGE-03", name: "Drop fully explained by PTO (suppress)", description: "Team score down 30%, two people silent — but both are on PTO.", detector: "engagement_drop", passed: true, expected: "no alert", actual: "no alert", rationale: "Silence is fully explained by PTO. Firing would be a clear false positive.", tests: ["PTO explanation gate"] },
+];
+const INTEGRATION_CATEGORIES = [
+  { name: "HRIS", requirement: "REQUIRED · pick one", purpose: "Source of truth for employment data, time-off records, onboarding milestones, org hierarchy. BambooHR, Rippling, or Workday." },
+  { name: "Communication", requirement: "OPTIONAL · recommended", purpose: "Engagement signals — message volume, channel activity. Slack today; Teams and Discord on the roadmap. Metadata only, never message content." },
+  { name: "Calendar", requirement: "REQUIRED for full coverage", purpose: "Meeting load, OOO events, manager 1:1 cadence, holiday awareness for noise suppression. Google Calendar today; Outlook on the roadmap." },
+];
+
+const INTEGRATIONS = [
+  {
+    name: "BambooHR",
+    category: "HRIS",
+    auth: "API key per tenant, generated in BambooHR admin → API Keys",
+    sync: "Pull on a 6-hour schedule. No webhooks for time-off changes, so polling is required.",
+    reads: "Employee directory + manager hierarchy, time-off requests, onboarding checklist completion (where configured), employment status history.",
+    limits: "1,000 requests per hour per API key. Comfortable up to ~5,000 employees with our access pattern.",
+    gotcha: "Occasional 429s during BambooHR's nightly backup window. Retry-with-backoff handles it; not a real production issue.",
+  },
+  {
+    name: "Rippling",
+    category: "HRIS",
+    auth: "OAuth 2.0 with customer-granted scopes; partner program access required for production.",
+    sync: "Webhooks for employment status changes; pull every 6 hours for everything else.",
+    reads: "Directory + hierarchy, richly-typed time-off (sick / PTO / parental), workflow-based onboarding progress, team assignments.",
+    limits: "Higher than BambooHR but not publicly documented; partner program assigns per-customer quotas.",
+    gotcha: "Webhook delivery is reliable but order isn't guaranteed. Idempotent processing on our side is required, not optional.",
+  },
+  {
+    name: "Workday",
+    category: "HRIS",
+    auth: "OAuth 2.0 with refresh tokens, scoped tenant access.",
+    sync: "Pull every 6 hours from REST endpoints; consider EIB for initial bulk load. Webhook subscriptions where the customer's tenant supports them.",
+    reads: "Workers + supervisory hierarchy, Absence module records, onboarding via Business Process status, supervisory organizations via Worktags.",
+    limits: "Tenant-specific and conservative. Production integrations typically combine webhooks with daily reconciliation pulls.",
+    gotcha: "Workday tenants have nightly maintenance windows; calls fail during them. Schedule-aware retries are required. Workday's data model is the most complex of any HRIS — proper mapping needs a Workday-certified domain expert.",
+  },
+  {
+    name: "Slack",
+    category: "Communication",
+    auth: "OAuth 2.0 bot token. Scopes: users:read, channels:read, conversations.history (only for channels the bot is invited to).",
+    sync: "Polled by team and channel. Metadata only — never message content.",
+    reads: "Per-user message counts (rolling 24h / 7d / 30d), channel membership, user profile email for HRIS identity matching.",
+    limits: "Tier 2 methods allow 20 requests/minute. Batched by team, with cached user metadata.",
+    gotcha: "Free Slack workspaces lose history beyond 90 days, capping how far back baselines can be established for new customers on free plans.",
+  },
+  {
+    name: "Google Calendar",
+    category: "Calendar",
+    auth: "OAuth 2.0 with admin-granted domain-wide delegation for org-level access.",
+    sync: "Push notifications via webhooks for changes; daily reconciliation pull.",
+    reads: "Meeting events (counts, duration, attendees), OOO events, recurring 1:1 detection between manager-report pairs, acceptance/decline status.",
+    limits: "1M queries per day per project. Easily sufficient.",
+    gotcha: "Domain-wide delegation requires Google Workspace admin to grant access — often takes 1–2 weeks to clear and is the single biggest blocker to customer activation in production.",
+  },
+];
+
+const SYNC_PATTERNS = [
+  { name: "Initial sync", frequency: "ONCE · AT ONBOARDING", what: "Full pull of the past 12 weeks to establish per-team baselines. Heaviest API usage — runs overnight for tenants over 1,000 employees. Carefully rate-limited so we don't burn through customer quotas during their first day." },
+  { name: "Incremental sync", frequency: "EVERY 6 HOURS", what: "Pull only what changed since the last sync, using each system's `since` or `updated_at` filter. For systems without delta support, we pull the full directory and diff client-side." },
+  { name: "Real-time webhooks", frequency: "WHERE AVAILABLE", what: "Subscribed for employment status changes (joined, left, took leave) on Rippling, Workday, and Google Calendar. Trigger immediate baseline updates rather than waiting for the next scheduled sync." },
+];
+
+const AUTH_PRINCIPLES = [
+  { title: "Read-only scope on every system", body: "We request the minimum scope that gets the job done. Write access is never requested. This keeps the security review tractable and avoids a whole class of \"the AI changed my data\" risks." },
+  { title: "Per-tenant isolation by construction", body: "Each customer's credentials only access their own tenant. Cross-tenant data access is impossible — not as a policy, but as a structural property of how credentials are stored and used." },
+  { title: "Auditable, not invasive", body: "Every API call is logged with customer ID, endpoint, and timestamp — never the response body. Debuggable without storing sensitive data unnecessarily." },
+  { title: "Customer-revocable, gracefully", body: "Customers can revoke access from their HRIS admin panel at any time. Our system detects revoked tokens within one sync cycle and pauses processing for that tenant — never failing silently." },
+];
+
+const FAILURE_MODES = [
+  { failure: "API outage on a source system", handling: "Retry with exponential backoff. If the system is down for more than 4 hours, we send a customer-facing notice (\"BambooHR sync paused — retrying\"). We never silently fail." },
+  { failure: "Rate limit hit", handling: "Backoff and queue. Initial syncs spread over hours, not minutes. For Workday tenants on tight quotas, per-customer rate limits negotiated directly with Workday support." },
+  { failure: "Schema change from the vendor", handling: "Versioned integration adapters plus a daily smoke test that pulls a known-shape payload. If a vendor changes a field, we catch it within 24 hours and patch before customers see broken data." },
+  { failure: "Partial data — Slack outage, calendar misconfiguration", handling: "Most common real-world failure. Rather than fire wrong alerts, we degrade gracefully: dependent signals pause, and customers see a \"partial coverage\" indicator on the brief." },
+  { failure: "Customer-side OAuth revocation or expiry", handling: "Detected within one sync cycle. Customer gets an email plus an in-app notice to re-authenticate. Alerts pause until reconnected." },
+  { failure: "Identity mismatch across systems", handling: "The underrated hard problem — Slack username doesn't always match HRIS email. Solved with deterministic email matching first, then fuzzy matching as a fallback, then human review for edge cases." },
+];
+
+const NON_GOALS = [
+  { title: "No write-back to source systems", reason: "We will never modify customer HRIS data. Suggested actions are surfaced to humans; they execute manually in the source system. Keeps the security review tractable and avoids \"the AI deleted my employee record\" risks." },
+  { title: "No content reading from Slack or email", reason: "Engagement signals come from metadata only — counts, timestamps, channel membership. The system never reads what people are saying. Documented prominently in customer-facing materials." },
+  { title: "No browsable per-employee attrition scores", reason: "Team-level patterns surface to managers; individual evidence is visible only when a specific alert fires. Managers who can sort their reports by attrition risk make different (and worse) decisions than managers who get one-off intervention signals." },
+  { title: "No raw data exports", reason: "Customers can see insights and the signals behind each insight. They cannot export \"all engagement scores for all employees over time\" — that's a different product (workforce analytics), with different ethics, and would need a different review process." },
 ];
