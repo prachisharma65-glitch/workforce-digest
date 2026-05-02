@@ -889,7 +889,7 @@ const CURRENT_WEEK = [
       ruleExpression: "team_out_pct ≥ baseline + (2 × stdev)  AND  team_out_pct − baseline ≥ 5pp",
     },
     action: "Reschedule Friday's Payments demo, or pull in Maya from Platform.",
-    actionRationale: "Maya covered for the same squad in March and is free Wed–Fri. Without coverage, the demo lands on two engineers who haven't presented before.",
+    actionRationale: "Maya is free Wed–Fri based on her calendar. Without backup coverage, the Payments squad runs the Friday demo with two of five members.",
   },
   {
     id: "onboarding-stalled",
