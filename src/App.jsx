@@ -1142,3 +1142,36 @@ const NON_GOALS = [
 
   { title: "No compensation as a digest signal", reason: "Compensation decisions are controllable inputs that line managers and department managers already make. The Digest's purpose is to surface patterns managers don't already see, not echo decisions they made. Downstream consequences of compensation issues (employee disengages after being passed over) are caught by the engagement drop signal, with the actual cause surfaced through the manager's 1:1. Adding compensation as a separate signal would tell managers something they already know — and surfacing per-team compensation signals to line managers raises significant privacy and equity concerns we deliberately chose not to invite." },
 ];
+
+const NOISE_CONTROLS = [
+  { title: "Self-baselining, not global thresholds", body: "Every team has its own 12-week rolling baseline. The system learns each team's normal." },
+  { title: "Two gates per signal", body: "An alert needs both statistical significance (z-score) and operational significance (an absolute floor). Both must hold." },
+  { title: "Multi-signal confirmation", body: "Engagement drops require team-level decline AND individual silence AND no PTO. Single-source signals are silenced." },
+  { title: "Calendar-aware suppression", body: "Holidays, retreats, all-hands weeks, end-of-quarter spikes are auto-detected and suppressed." },
+  { title: "Customer feedback loop", body: "Patterns repeatedly marked as not useful auto-raise their threshold for that team." },
+  { title: "Per-individual cool-down (V2)", body: "Repeat alerts on the same individual within a 6-week window are suppressed by default. Prevents the alert system itself from becoming a per-employee surveillance accumulation mechanism in the line manager's mental model. Customer-tunable, opt-out available with audit logging." },
+];
+
+const VALIDATION_RINGS = [
+  {
+    name: "Cross-signal corroboration",
+    latency: "Real-time",
+    what: "When an alert fires, the system independently checks 3–5 signals it did not use to generate the alert. The corroboration result drives the confidence score shown on every insight.",
+    catches: "Alerts based on a single data source, transient measurement artifacts, alerts that contradict adjacent evidence.",
+    misses: "Patterns where all available signals are correlated but the underlying inference is wrong.",
+  },
+  {
+    name: "Outcome-based validation",
+    latency: "30–180 days",
+    what: "Some alerts have ground-truth outcomes that arrive automatically: an attrition risk is validated when the person resigns or doesn't, an onboarding stall is validated when the new hire ramps or churns. The HR manager grades nothing.",
+    catches: "Whether the alert's predicted outcome actually occurred. Drives the per-signal scorecard.",
+    misses: "The causal question. If the manager intervened and the outcome didn't happen, this ring can't tell you whether the intervention saved them or whether they were never going to leave.",
+  },
+  {
+    name: "Counterfactual validation",
+    latency: "6+ months, requires opt-in",
+    what: "We randomly suppress a small percentage of alerts on qualifying teams (10%, opt-in only) and compare downstream outcomes against the alerted-and-acted-upon group.",
+    catches: "Causal impact. Whether the system, in aggregate, actually changes outcomes — not just predicts them.",
+    misses: "Per-customer answers. This ring works at the population level across many customers.",
+  },
+];
