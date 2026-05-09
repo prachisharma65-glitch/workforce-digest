@@ -1002,50 +1002,26 @@ const PREVIOUS_WEEK = [
 ];
 
 const SOURCES = [
-  { name: "BambooHR", type: "HRIS", feeds: "Time-off, onboarding checklists, employment status, manager hierarchy.", cadence: "syncs every 6 hours" },
+  { name: "BambooHR", type: "HRIS", feeds: "Time-off, onboarding checklists, employment status, manager hierarchy, performance rating changes (structured scores only — no review text content).", cadence: "syncs every 6 hours" },
+
   { name: "Rippling", type: "HRIS (alternative)", feeds: "Same fields as BambooHR.", cadence: "syncs every 6 hours" },
+
   { name: "Slack", type: "Communication", feeds: "Message volume per user — counts only, never content.", cadence: "rolling 24h window" },
-  { name: "Google Calendar", type: "Calendar", feeds: "Meeting load, OOO events, 1:1 cadence, acceptance rates.", cadence: "rolling 7d window" },
+
+  { name: "Google Calendar", type: "Calendar", feeds: "Meeting load, OOO events, 1:1 cadence, acceptance rates, voluntary event participation (hackathons, optional learning, all-hands attendance).", cadence: "rolling 7d window" },
+
   { name: "Figma · Linear · GitHub", type: "Optional · work signals", feeds: "Edit and contribution activity. Strengthens engagement signals when present.", cadence: "rolling 7d window" },
 ];
 
 const RULES = [
-  { name: "Leave anomaly", plain: "A team has materially more people out this week than its own historical pattern would predict.", expression: "team_out_pct ≥ baseline + (2 × stdev)  AND  − baseline ≥ 5pp", thresholdSource: "Defaults from Gallup absence research; per-team baseline learned from 12-week history." },
-  { name: "Onboarding stall", plain: "A new hire is falling meaningfully behind the cohort that started around the same time.", expression: "cohort_avg(day_n) − employee_completion ≥ 25pp  for  ≥ 5 days", thresholdSource: "Defaults from BambooHR's published onboarding research; gap and persistence are tunable per company." },
-  { name: "Engagement drop", plain: "A team's combined activity is well below its own recent baseline AND someone has gone individually quiet AND there's no PTO to explain it.", expression: "team_score < (baseline × 0.75)  AND  ∃ user: silent_days ≥ 7", thresholdSource: "Internal heuristic, calibrated against attrition outcomes in pilot data. Honest disclosure: this is the rule with the weakest external grounding and the highest customer-tunability." },
-  { name: "Process delay", plain: "A scheduled HR process has missed its deadline by a meaningful amount.", expression: "days_overdue ≥ 7  AND  affected_employees ≥ 3", thresholdSource: "Operational threshold set with HR domain experts; tunable." },
-];
+   { name: "Leave anomaly", plain: "A team has materially more people out this week than its own historical pattern would predict. This is an operational signal — team coverage gap, not attrition signal.", expression: "team_out_pct ≥ baseline + (2 × stdev)  AND  team_out_pct − baseline ≥ 5pp", thresholdSource: "Calibrated heuristic. The dual-gate framework (statistical baseline + operational floor) is borrowed from public-health surveillance methodology — see CDC epidemic-threshold approach. Per-team baseline learned from 12-week history. Threshold values (2σ, 5pp) are operational design choices, tunable per customer. Not derived from external HR research." },
 
-const NOISE_CONTROLS = [
-  { title: "Self-baselining, not global thresholds", body: "Every team has its own 12-week rolling baseline. The system learns each team's normal." },
-  { title: "Two gates per signal", body: "An alert needs both statistical significance (z-score) and operational significance (an absolute floor). Both must hold." },
-  { title: "Multi-signal confirmation", body: "Engagement drops require team-level decline AND individual silence AND no PTO. Single-source signals are silenced." },
-  { title: "Calendar-aware suppression", body: "Holidays, retreats, all-hands weeks, end-of-quarter spikes are auto-detected and suppressed." },
-  { title: "Customer feedback loop", body: "Patterns repeatedly marked as not useful auto-raise their threshold for that team." },
-];
+  { name: "Onboarding stall", plain: "A new hire is falling meaningfully behind the cohort that started around the same time. This is a lifecycle signal — early-tenure ramp failure with direct cost (productivity lag).", expression: "cohort_avg(day_n) − employee_completion ≥ 25pp  for  ≥ 5 days", thresholdSource: "Operational threshold; calibrated heuristic. The 25pp gap and 5-day persistence values are design choices balancing early detection against false positives. Tunable per company. Not derived from external research." },
 
-const VALIDATION_RINGS = [
-  {
-    name: "Cross-signal corroboration",
-    latency: "Real-time",
-    what: "When an alert fires, the system independently checks 3–5 signals it did not use to generate the alert. The corroboration result drives the confidence score shown on every insight.",
-    catches: "Alerts based on a single data source, transient measurement artifacts, alerts that contradict adjacent evidence.",
-    misses: "Patterns where all available signals are correlated but the underlying inference is wrong.",
-  },
-  {
-    name: "Outcome-based validation",
-    latency: "30–180 days",
-    what: "Some alerts have ground-truth outcomes that arrive automatically: an attrition risk is validated when the person resigns or doesn't, an onboarding stall is validated when the new hire ramps or churns. The HR manager grades nothing.",
-    catches: "Whether the alert's predicted outcome actually occurred. Drives the per-signal scorecard.",
-    misses: "The causal question. If the manager intervened and the outcome didn't happen, this ring can't tell you whether the intervention saved them or whether they were never going to leave.",
-  },
-  {
-    name: "Counterfactual validation",
-    latency: "6+ months, requires opt-in",
-    what: "We randomly suppress a small percentage of alerts on qualifying teams (10%, opt-in only) and compare downstream outcomes against the alerted-and-acted-upon group.",
-    catches: "Causal impact. Whether the system, in aggregate, actually changes outcomes — not just predicts them.",
-    misses: "Per-customer answers. This ring works at the population level across many customers.",
-  },
+  { name: "Engagement drop", plain: "A team's combined activity is well below its own recent baseline AND someone has gone individually quiet AND there's no PTO to explain it. This is a behavioral pre-attrition signal. Inputs include: Slack message volume, calendar attendance, work-tool activity (Figma, Linear, GitHub), voluntary participation in team events (hackathons, all-hands, optional learning), and perf rating shifts as correlating context.", expression: "team_score < (baseline × 0.75)  AND  ∃ user: silent_days ≥ 7  AND  pto_days = 0", thresholdSource: "Internal heuristic, calibrated against attrition outcomes in pilot data. Deliberately the rule with the most explicit honest disclosure: weakest external grounding, highest customer-tunability. Inputs are intentionally diversified (behavioral + participation + structured rating context) to reduce reliance on any single channel." },
+
+  { name: "Process delay", plain: "A scheduled HR process has missed its deadline by a meaningful amount.", expression: "days_overdue ≥ 7  AND  affected_employees ≥ 3", thresholdSource: "Operational threshold set with HR domain experts; tunable. Calibrated heuristic, not derived from external research." },
+
 ];
 
 const SCORECARD = [
@@ -1057,8 +1033,13 @@ const SCORECARD = [
 
 const OPEN_QUESTIONS = [
   { q: "How does engagement-drop accuracy hold up across companies of different sizes?", a: "Pending — current scorecard data is from 12 design-partner companies, all 50–300 employees. Smaller and larger companies may show different patterns." },
-  { q: "Are we systematically over- or under-flagging certain demographics?", a: "Open and important. We're not yet auditing for demographic bias in alert distribution; this is a known gap and a near-term roadmap item." },
+
+  { q: "Are we systematically over- or under-flagging certain demographics?", a: "Open and important. We're not yet auditing for demographic bias in alert distribution; this is a known gap and a near-term roadmap item. Our deliberate choice to avoid NLP sentiment on review text removes one well-documented bias surface (see Kiritchenko & Mohammad 2018) but does not eliminate the risk that proxy signals — voluntary event participation, Slack volume — correlate with caregiving status, neurodiversity, communication style, or other protected and quasi-protected categories." },
+
+  { q: "How much does action-level identification erode the team-level privacy commitment over time?", a: "Open. Non-goal #3 prevents browseable per-employee scores, but action items necessarily name individuals to line managers. Over months, line managers may build de facto per-employee surveillance models from accumulated alerts. The cool-down rule and audit logging mitigate but don't eliminate this. Empirical study with design partners is on the V2 roadmap." },
+
   { q: "What's the cost of a false positive vs. a false negative?", a: "Asymmetric and customer-specific. A false positive costs a manager's time on an unnecessary 1:1; a false negative costs an unprevented resignation." },
+
   { q: "Can the rules themselves be wrong, even when they fire correctly per their own logic?", a: "Yes. A rule can be internally consistent and externally invalid — e.g., \"low Slack activity = disengagement\" assumes Slack is where engagement shows up. For some teams, it isn't." },
 ];
 
@@ -1151,8 +1132,13 @@ const FAILURE_MODES = [
 ];
 
 const NON_GOALS = [
-  { title: "No write-back to source systems", reason: "We will never modify customer HRIS data. Suggested actions are surfaced to humans; they execute manually in the source system. Keeps the security review tractable and avoids \"the AI deleted my employee record\" risks." },
-  { title: "No content reading from Slack or email", reason: "Engagement signals come from metadata only — counts, timestamps, channel membership. The system never reads what people are saying. Documented prominently in customer-facing materials." },
-  { title: "No browsable per-employee attrition scores", reason: "Team-level patterns surface to managers; individual evidence is visible only when a specific alert fires. Managers who can sort their reports by attrition risk make different (and worse) decisions than managers who get one-off intervention signals." },
+   { title: "No write-back to source systems", reason: "We will never modify customer HRIS data. Suggested actions are surfaced to humans; they execute manually in the source system. Keeps the security review tractable and avoids \"the AI deleted my employee record\" risks." },
+
+  { title: "No content reading from Slack, email, or review text", reason: "Engagement signals come from metadata only — counts, timestamps, channel membership. The system never reads what people are saying. This extends explicitly to performance review text: we use rating scores as structured signals, not NLP sentiment on review content. Two reasons. First, documented bias in the category: Kiritchenko & Mohammad 2018 examined 219 sentiment systems and found several with statistically significant gender and race bias. Second, a stricter privacy posture than the broader market norm. We commit to this constraint publicly so customers can rely on it." },
+
+  { title: "No browsable per-employee attrition scores", reason: "Team-level patterns surface to managers; individual evidence is visible only when a specific alert fires. Managers who can sort their reports by attrition risk make different (and worse) decisions than managers who get one-off intervention signals. Important honest disclosure: this is layered defense, not full protection. Action-level identification (e.g., \"assign Sasha as buddy for Jordan\") still names individuals to line managers by necessity. V2 mitigations to address the residual risk: audit logging of per-employee alert frequency with thresholds that flag systemic over-flagging of specific individuals; line-manager training that frames alerts as point-in-time interventions, not standing judgments; cool-down rules that suppress repeat alerts on the same individual within a window." },
+
   { title: "No raw data exports", reason: "Customers can see insights and the signals behind each insight. They cannot export \"all engagement scores for all employees over time\" — that's a different product (workforce analytics), with different ethics, and would need a different review process." },
+
+  { title: "No compensation as a digest signal", reason: "Compensation decisions are controllable inputs that line managers and department managers already make. The Digest's purpose is to surface patterns managers don't already see, not echo decisions they made. Downstream consequences of compensation issues (employee disengages after being passed over) are caught by the engagement drop signal, with the actual cause surfaced through the manager's 1:1. Adding compensation as a separate signal would tell managers something they already know — and surfacing per-team compensation signals to line managers raises significant privacy and equity concerns we deliberately chose not to invite." },
 ];
