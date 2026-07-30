@@ -247,8 +247,12 @@ function DetailModal({ insight, onClose, onOpenSignalBook, onOpenValidation }) {
           <div className="sans" style={{ fontSize: 11, color: "#999", letterSpacing: "0.04em", marginBottom: 16, fontWeight: 500 }}>Recommended next step</div>
           {agentLoading && (<div className="sans" style={{ fontSize: 13, color: "#888", fontStyle: "italic", marginBottom: 20 }}>Agent investigating…</div>)}
           {agentError && !agentResult && (<div className="sans" style={{ fontSize: 13, color: "#9A4D2A", marginBottom: 20 }}>Agent error: {agentError}. Falling back to static recommendation.</div>)}
-          <div className="serif" style={{ fontSize: 18, fontWeight: 400, color: "#1a1a1a", lineHeight: 1.4, marginBottom: 12, letterSpacing: "-0.01em" }}>{agentResult?.recommendation || insight.action}</div>
-          <p className="sans" style={{ fontSize: 13, color: "#777", lineHeight: 1.6, margin: "0 0 20px" }}>{agentResult?.rationale || insight.actionRationale}</p>
+          {!agentLoading && (
+            <>
+              <div className="serif" style={{ fontSize: 18, fontWeight: 400, color: "#1a1a1a", lineHeight: 1.4, marginBottom: 12, letterSpacing: "-0.01em" }}>{agentResult?.recommendation || insight.action}</div>
+              <p className="sans" style={{ fontSize: 13, color: "#777", lineHeight: 1.6, margin: "0 0 20px" }}>{agentResult?.rationale || insight.actionRationale}</p>
+            </>
+          )}
           {agentResult?.trace && (
             <details style={{ marginBottom: 28 }}>
               <summary className="sans" style={{ fontSize: 11, color: "#9A4D2A", cursor: "pointer", letterSpacing: "0.04em", fontWeight: 500 }}>▸ Agent reasoning trace ({agentResult.iterations} iterations)</summary>
