@@ -179,6 +179,106 @@ function InsightRow({ insight, rank, isLast, resolved, onOpen, onResolve }) {
   );
 }
 
+function DetailModal({ insight, onClose, onOpenSignalBook, onOpenValidation }) {
+  const [actionTaken, setActionTaken] = useState(null);
+  const [agentResult, setAgentResult] = useState(null);
+  const [agentLoading, setAgentLoading] = useState(false);
+  const [agentError, setAgentError] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setAgentLoading(true);
+    setAgentResult(null);
+    setAgentError(null);
+
+    const teamGuess = insight.data?.[0]?.label?.includes("Engineering")
+      ? "Engineering"
+      : insight.category?.includes("Engagement")
+      ? "Design"
+      : "Engineering";
+
+    const alertPayload = {
+      id: insight.id,
+      category: insight.category,
+      team: teamGuess,
+      week: "2026-04-21",
+      title: insight.title,
+      summary: insight.summary,
+      key_facts: insight.data?.map((d) => `${d.label}: ${d.value}`) || [],
+    };
+
+    fetch("/api/investigate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(alertPayload),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return;
+        if (data.error) {
+          setAgentError(data.error);
+        } else {
+          setAgentResult(data);
+        }
+        setAgentLoading(false);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setAgentError(err.message);
+        setAgentLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [insight.id]);
+
+  return (
+    <div className="modal-backdrop" onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(20,18,12,0.4)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 24 }}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ background: "#FAF8F4", maxWidth: 600, width: "100%", maxHeight: "88vh", overflow: "auto", borderRadius: 4, boxShadow: "0 32px 80px rgba(0,0,0,0.18)" }}>
+        <div style={{ padding: "40px 48px 28px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
+            <div className="sans" style={{ fontSize: 11, color: "#9A4D2A", letterSpacing: "0.04em", fontWeight: 500 }}>{insight.category}</div>
+            <button onClick={onClose} className="link-btn" style={{ color: "#999", padding: 4 }}><X size={16} /></button>
+          </div>
+          <h2 className="serif" style={{ fontSize: 22, fontWeight: 400, letterSpacing: "-0.01em", lineHeight: 1.3, margin: "0 0 20px", color: "#1a1a1a" }}>{insight.title}</h2>
+          <p className="sans" style={{ fontSize: 14, color: "#555", lineHeight: 1.65, margin: "0 0 12px" }}>{insight.summary}</p>
+        </div>
+
+        <div style={{ padding: "0 48px 48px" }}>
+          <div className="sans" style={{ fontSize: 11, color: "#999", letterSpacing: "0.04em", marginBottom: 16, fontWeight: 500 }}>Recommended next step</div>
+          {agentLoading && (<div className="sans" style={{ fontSize: 13, color: "#888", fontStyle: "italic", marginBottom: 20 }}>Agent investigating…</div>)}
+          {agentError && !agentResult && (<div className="sans" style={{ fontSize: 13, color: "#9A4D2A", marginBottom: 20 }}>Agent error: {agentError}. Falling back to static recommendation.</div>)}
+          <div className="serif" style={{ fontSize: 18, fontWeight: 400, color: "#1a1a1a", lineHeight: 1.4, marginBottom: 12, letterSpacing: "-0.01em" }}>{agentResult?.recommendation || insight.action}</div>
+          <p className="sans" style={{ fontSize: 13, color: "#777", lineHeight: 1.6, margin: "0 0 20px" }}>{agentResult?.rationale || insight.actionRationale}</p>
+          {agentResult?.trace && (
+            <details style={{ marginBottom: 28 }}>
+              <summary className="sans" style={{ fontSize: 11, color: "#9A4D2A", cursor: "pointer", letterSpacing: "0.04em", fontWeight: 500 }}>▸ Agent reasoning trace ({agentResult.iterations} iterations)</summary>
+              <div style={{ marginTop: 12, padding: "12px 16px", background: "rgba(0,0,0,0.03)", borderRadius: 4, fontSize: 11 }}>
+                {agentResult.trace.map((step, i) => (
+                  <div key={i} style={{ marginBottom: 8, fontFamily: "monospace" }}>
+                    {step.type === "tool_call" ? (<div><strong>Step {step.step}: called {step.tool}</strong> with {JSON.stringify(step.input)}</div>) : (<div style={{ color: "#666", paddingLeft: 12 }}>→ result: {JSON.stringify(step.output).slice(0, 150)}…</div>)}
+                  </div>
+                ))}
+              </div>
+            </details>
+          )}
+          {actionTaken ? (
+            <div style={{ padding: "20px 24px", background: "rgba(122,148,102,0.08)", borderRadius: 4, borderLeft: "2px solid #7B9466" }}>
+              <div className="sans" style={{ fontSize: 13, color: "#1a1a1a", marginBottom: 6, fontWeight: 500 }}>{actionTaken === "action" ? "Action logged." : "Snoozed until next Monday."}</div>
+              <div className="sans" style={{ fontSize: 12, color: "#666", lineHeight: 1.55 }}>{actionTaken === "action" ? "In production, this would open the relevant workflow." : "In production, this would suppress this alert until next Monday."}</div>
+              <div className="sans mono" style={{ fontSize: 10, color: "#999", letterSpacing: "0.04em", marginTop: 8 }}>DEMO · NOT CONNECTED TO REAL SYSTEMS</div>
+            </div>
+          ) : (
+            <div style={{ display: "flex", gap: 12 }}>
+              <button onClick={() => setActionTaken("action")} className="sans" style={{ flex: 1, padding: "12px 20px", background: "#1a1a1a", color: "#FAF8F4", border: "none", borderRadius: 2, fontSize: 13, fontWeight: 500, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>Take action <ArrowRight size={14} /></button>
+              <button onClick={() => setActionTaken("snooze")} className="sans" style={{ padding: "12px 20px", background: "transparent", border: "1px solid rgba(0,0,0,0.12)", borderRadius: 2, fontSize: 13, fontWeight: 500, color: "#666" }}>Snooze</button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ValidationPage({ onBack }) {
   return (
     <div style={{ maxWidth: 760, margin: "0 auto", padding: "80px 32px 120px" }}>
