@@ -95,21 +95,20 @@ const tools = [
 ];
 
 // System prompt: what the agent's job is
-const SYSTEM_PROMPT = `You are an HR operations agent for Workforce Digest. Your job is to investigate fired workforce alerts and produce a specific, actionable recommendation for the HR manager.
+const SYSTEM_PROMPT = `You are an HR operations agent for Workforce Digest. Investigate fired workforce alerts and produce a specific, actionable recommendation.
 
-For each alert you receive, follow this process:
-1. Understand what the alert is about (leave anomaly, onboarding stall, engagement drop, etc.)
-2. Decide which tools you need to investigate — check team calendar, roster, availability, PTO status, and relevant HR policies as needed
-3. Call the tools in a logical sequence, using earlier results to inform later calls
-4. Once you have enough context, produce your final recommendation
+Process:
+1. Understand the alert
+2. Call tools to gather context (calendar, roster, availability, PTO, policies)
+3. Once you have enough context, produce your final answer
 
-Your final response MUST be a valid JSON object with this exact shape:
-{
-  "recommendation": "One-line specific action, naming people and dates where possible",
-  "rationale": "2-3 sentence explanation referencing specific data you found and policies that apply"
-}
+CRITICAL OUTPUT FORMAT:
+When you have enough information, respond with ONLY a JSON object. No preamble, no analysis text, no markdown code fences, no reasoning, no "let me reconsider" — just the JSON object as your entire response.
 
-Do not include any text outside the JSON. Be specific — reference actual names, dates, and policy requirements you discovered through tool calls.`;
+Exact shape:
+{"recommendation": "One-line specific action, naming people and dates", "rationale": "2-3 sentence explanation citing specific data and policies"}
+
+If you find yourself writing anything other than the JSON object as your final message, stop and rewrite as just the JSON.`;
 
 export async function investigateAlert(alert) {
   const model = new ChatAnthropic({
@@ -164,13 +163,31 @@ export async function investigateAlert(alert) {
     }
 
     // No more tool calls — parse final JSON response
-    const finalText = response.content;
-    let parsed;
-    try {
-      const jsonMatch = finalText.match(/\{[\s\S]*\}/);
-      parsed = JSON.parse(jsonMatch[0]);
-    } catch (e) {
-      parsed = { recommendation: "Could not parse", rationale: finalText };
+    const finalText = typeof response.content === "string" ? response.content : JSON.stringify(response.content);
+    let parsed = null;
+    // Find all JSON-looking blocks and try each from last to first (Claude may include analysis text before the final JSON)
+    const jsonMatches = [...finalText.matchAll(/\{[\s\S]*?\}/g)].map(m => m[0]);
+    for (let i = jsonMatches.length - 1; i >= 0; i--) {
+      try {
+        const candidate = JSON.parse(jsonMatches[i]);
+        if (candidate.recommendation && candidate.rationale) {
+          parsed = candidate;
+          break;
+        }
+      } catch (e) { /* try next */ }
+    }
+    if (!parsed) {
+      // Fallback: try a more permissive match
+      const bigMatch = finalText.match(/\{[\s\S]*\}/);
+      if (bigMatch) {
+        try {
+          parsed = JSON.parse(bigMatch[0]);
+        } catch (e) {
+          parsed = { recommendation: "Could not parse", rationale: finalText.slice(0, 500) };
+        }
+      } else {
+        parsed = { recommendation: "Could not parse", rationale: finalText.slice(0, 500) };
+      }
     }
 
     return {
