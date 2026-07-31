@@ -156,10 +156,6 @@ function InsightRow({ insight, rank, isLast, resolved, onOpen, onResolve }) {
         <div className="sans" style={{ fontSize: 14, color: "#777", lineHeight: 1.6, marginBottom: 16 }}>
           {insight.summary}
         </div>
-        <div className="sans" style={{ fontSize: 13, color: "#1a1a1a", lineHeight: 1.5, display: "flex", alignItems: "baseline", gap: 8, marginBottom: 12 }}>
-          <span style={{ color: "#9A4D2A", fontSize: 11, letterSpacing: "0.04em", fontWeight: 500, flexShrink: 0 }}>SUGGESTED</span>
-          <span>{insight.action}</span>
-        </div>
         <div className="sans mono" style={{ fontSize: 10, color: "#aaa", letterSpacing: "0.02em" }}>
           {insight.sources.join(" · ")}
         </div>
@@ -244,8 +240,12 @@ function DetailModal({ insight, onClose, onOpenSignalBook, onOpenValidation }) {
         </div>
 
         <div style={{ padding: "0 48px 48px" }}>
-          <div className="sans" style={{ fontSize: 11, color: "#999", letterSpacing: "0.04em", marginBottom: 16, fontWeight: 500 }}>Recommended next step</div>
-          {agentLoading && (<div className="sans" style={{ fontSize: 13, color: "#888", fontStyle: "italic", marginBottom: 20 }}>Agent investigating…</div>)}
+          {agentLoading && (
+            <div className="sans" style={{ fontSize: 13, color: "#888", fontStyle: "italic", marginBottom: 20 }}>Agent investigating…</div>
+          )}
+          {!agentLoading && (
+            <div className="sans" style={{ fontSize: 11, color: "#999", letterSpacing: "0.04em", marginBottom: 16, fontWeight: 500 }}>Recommended next step</div>
+          )}
           {agentError && !agentResult && (<div className="sans" style={{ fontSize: 13, color: "#9A4D2A", marginBottom: 20 }}>Agent error: {agentError}. Falling back to static recommendation.</div>)}
           {!agentLoading && (
             <>
